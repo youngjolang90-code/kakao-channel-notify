@@ -1,0 +1,36 @@
+name: "1회 설정: 카카오 토큰 발급"
+
+on:
+  workflow_dispatch:
+    inputs:
+      code:
+        description: "카카오 동의 후 주소창에 뜬 주소 전체를 붙여넣기 (10분 안에)"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 토큰 발급
+        env:
+          KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
+          KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
+          AUTH_CODE: ${{ github.event.inputs.code }}
+        run: python setup_token.py
+
+      - name: 시크릿에 저장
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          gh secret set KAKAO_REFRESH_TOKEN --repo "$GITHUB_REPOSITORY" < new_refresh_token.txt
+          rm -f new_refresh_token.txt
+          echo "KAKAO_REFRESH_TOKEN 시크릿 저장 완료"
