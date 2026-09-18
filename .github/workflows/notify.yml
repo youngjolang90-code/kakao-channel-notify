@@ -1,0 +1,36 @@
+name: 채널 새 글 알림
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # 15분마다 (GitHub 사정에 따라 조금 늦어질 수 있음)
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "normal=평소 / observe=글 목록만 확인 / test=최신 글 강제 전송"
+        type: choice
+        options: [normal, observe, test]
+        default: normal
+
+permissions:
+  contents: write
+
+concurrency:
+  group: channel-notify
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 새 글 확인 및 알림
+        env:
+          KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
+          KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
+          KAKAO_REFRESH_TOKEN: ${{ secrets.KAKAO_REFRESH_TOKEN }}
